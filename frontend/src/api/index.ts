@@ -28,6 +28,11 @@ export const testDataSourceConnection: Resource = createResource({
 	url: 'insights.api.setup.test_database_connection',
 })
 
+export const createCustomDataSource: Resource = createResource({ url: 'insights.api.setup.add_custom_database' })
+export const testCustomDataSourceConnection: Resource = createResource({
+	url: 'insights.api.setup.test_custom_database_connection',
+})
+
 export const createQuery: Resource = createResource({ url: 'insights.api.queries.create_query' })
 
 export const getDocumentResource = (doctype: string, docname?: string, options?: object) => {
