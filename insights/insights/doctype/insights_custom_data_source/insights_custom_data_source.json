@@ -7,9 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
-  "database_name",
   "database_type",
-  "is_site_db",
   "status",
   "project_id",
   "service_account"
@@ -22,21 +20,10 @@
    "unique": 1
   },
   {
-   "fieldname": "database_name",
-   "fieldtype": "Data",
-   "label": "Database Name"
-  },
-  {
    "fieldname": "database_type",
    "fieldtype": "Select",
    "label": "Database Type",
    "options": "BigQuery\nRedShift\nS3"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Inactive\nActive"
   },
   {
    "fieldname": "project_id",
@@ -49,15 +36,15 @@
    "label": "Service Account"
   },
   {
-   "default": "0",
-   "fieldname": "is_site_db",
-   "fieldtype": "Check",
-   "label": "Site Database"
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Inactive\nActive"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-18 17:20:37.921249",
+ "modified": "2024-09-20 20:13:19.584873",
  "modified_by": "Administrator",
  "module": "Insights",
  "name": "Insights Custom Data Source",
