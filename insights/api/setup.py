@@ -104,12 +104,20 @@ def get_new_datasource(db):
 def get_new_custom_datasource(db):
     data_source = frappe.new_doc("Insights Custom Data Source")
     if db.get("type") == "BigQuery" or db.get("type") == "RedShift" or db.get("type") == "S3":
+        try:
+            service_account = json.loads(db.get("service_account"))
+        except json.JSONDecodeError as e:
+            frappe.throw(
+                title='Error',
+                msg='Service account is not a valid JSON',
+                exc=FileNotFoundError
+            )
         data_source.update(
             {
                 "database_type": db.get("type"),
                 "title": db.get("title"),
                 "project_id": db.get("project_id"),
-                "service_account": json.loads(db.get("service_account")),
+                "service_account": service_account
             }
         )
     return data_source
