@@ -4,10 +4,22 @@ import re
 import frappe
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from insights.insights.query_builders.bigquery.builder import BigQueryQueryBuilder
+from sqlalchemy import column as Column
+from sqlalchemy import inspect
+from sqlalchemy import select as Select
+from sqlalchemy import Table
+from sqlalchemy import text
+from sqlalchemy.engine.base import Connection
+from sqlalchemy.dialects import registry
+from sqlalchemy import *
+from sqlalchemy.engine import create_engine
+from sqlalchemy import MetaData
+from sqlalchemy.schema import *
+
+from insights.insights.query_builders.postgresql.builder import PostgresQueryBuilder
 
 from .base_database import BaseDatabase
-from .utils import create_insights_table
+from .utils import create_insights_table, get_sqlalchemy_engine
 
 IGNORED_TABLES = ["__.*"]
 
@@ -29,26 +41,24 @@ class BigQueryDatabase(BaseDatabase):
         self.data_source = "BigQuery"
         self.project_id = kwargs.pop("project_id")
         self.service_account = kwargs.pop("service_account")
-        try:
-            self.client = bigquery.Client(
-                project = self.project_id,
-                credentials = service_account.Credentials.from_service_account_info(self.service_account)
-            )
-        except Exception as e:
-            frappe.throw(frappe.throw(f"Error setting up BigQuery client: {e}"))
+        registry.register('bigquery', 'pybigquery.sqlalchemy_bigquery', 'BigQueryDialect')
+
+        self.engine = create_engine(
+            'bigquery://',
+            credentials_info=self.service_account
+        )
         
-        datasets = self.client.list_datasets()
-        self.project_tables = {}
+        self.metadata = MetaData()
 
-        for dataset in datasets:
-            dataset_id = dataset.dataset_id
-            dataset_ref = self.client.dataset(dataset_id)
-            tables = self.client.list_tables(dataset_ref)
-            self.project_tables[dataset_id] = [table.table_id for table in tables]
-
-        frappe.throw(str(self.project_tables))
+        table = Table('ambika_data.sales_register', self.metadata)
+        
+        frappe.throw(str(table.fullname))
 
         self.query_builder: BigQueryQueryBuilder = BigQueryQueryBuilder(self.client)
+
+    def get_table(project_name: str, dataset_name: str, table_name: str) -> Table:
+        table = Table(f'{project_name}.{dataset_name}.{table_name}', metadata, autoload_with=engine)
+        return table
 
     def sync_tables(self, dataset_id, tables=None, force=False):
         self.table_factory.sync_tables(dataset_id, tables, force)
