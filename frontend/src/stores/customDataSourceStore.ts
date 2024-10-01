@@ -50,7 +50,6 @@ const useCustomDataSourceStore = defineStore('insights:custom_data_sources', () 
 			listResource.delete.submit(name).then(() => listResource.list.reload()),
 		testConnection: (args: any) => api.testCustomDataSourceConnection.submit(args),
 		getDropdownOptions: (filters: any) => {
-			// filters = {is_site_db: 1}
 			const filteredDataSources = list.value.filter((dataSource: CustomDataSourceItem) => {
 				for (const key in filters) {
 					const k = key as keyof CustomDataSourceItem
