@@ -2,24 +2,18 @@
 
 import re
 import frappe
-from google.cloud import bigquery
-from google.oauth2 import service_account
 from sqlalchemy import column as Column
-from sqlalchemy import inspect
 from sqlalchemy import select as Select
 from sqlalchemy import Table
-from sqlalchemy import text
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.dialects import registry
 from sqlalchemy import *
 from sqlalchemy.engine import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy.schema import *
-
-from insights.insights.query_builders.postgresql.builder import PostgresQueryBuilder
-
+from .utils import create_insights_table
+from insights.insights.query_builders.bigquery.builder import BigQueryQueryBuilder
 from .base_database import BaseDatabase
-from .utils import create_insights_table, get_sqlalchemy_engine
 
 IGNORED_TABLES = ["__.*"]
 
@@ -36,6 +30,73 @@ BIGQUERY_TO_GENERIC_TYPES = {
 }
 
 
+class BigQueryTableFactory:
+    """Fetchs tables and columns from database and links from doctype"""
+
+    def __init__(self, data_source) -> None:
+        self.db_conn: Connection
+        self.data_source = data_source
+    
+    def sync_tables(self, connection, tables, force=False):
+        self.db_conn = connection
+        for table in self.get_tables(table_names=tables):
+            # when force is true, it will overwrite the existing columns & links
+            create_insights_table(table, force=force)
+
+    def get_tables(self, table_names=None):
+        tables = []
+        for table in self.get_db_tables(table_names):
+            table.columns = self.get_table_columns(table.table)
+            # TODO: process foreign keys as links
+            tables.append(table)
+        return tables
+
+    def get_db_tables(self, table_names=None):
+        inspector = inspect(self.db_conn)
+        tables = set(inspector.get_table_names()) | set(inspector.get_foreign_table_names())
+        if table_names:
+            tables = [table for table in tables if table in table_names]
+        return [self.get_table(table) for table in tables if not self.should_ignore(table)]
+
+    def should_ignore(self, table_name):
+        return any(re.match(pattern, table_name) for pattern in IGNORED_TABLES)
+
+    def get_table(self, table_name):
+        return frappe._dict(
+            {
+                "table": table_name,
+                "label": frappe.unscrub(table_name),
+                "data_source": self.data_source,
+            }
+        )
+
+    def get_all_columns(self):
+        inspector = inspect(self.db_conn)
+        tables = inspector.get_table_names()
+        columns_by_table = {}
+        for table in tables:
+            columns = inspector.get_columns(table)
+            for col in columns:
+                columns_by_table.setdefault(table, []).append(
+                    self.get_column(col["name"], col["type"])
+                )
+        return columns_by_table
+
+    def get_table_columns(self, table):
+        if not hasattr(self, "_all_columns") or not self._all_columns:
+            self._all_columns = self.get_all_columns()
+        return self._all_columns.get(table, [])
+
+    def get_column(self, column_name, column_type):
+        return frappe._dict(
+            {
+                "column": column_name,
+                "label": frappe.unscrub(column_name),
+                "type": BIGQUERY_TO_GENERIC_TYPES.get(column_type, "String"),
+            }
+        )
+
+
 class BigQueryDatabase(BaseDatabase):
     def __init__(self, **kwargs):
         self.data_source = "BigQuery"
@@ -47,41 +108,30 @@ class BigQueryDatabase(BaseDatabase):
             'bigquery://',
             credentials_info=self.service_account
         )
-        
-        self.metadata = MetaData()
 
-        table = Table('ambika_data.sales_register', self.metadata)
-        
-        frappe.throw(str(table.fullname))
+        self.query_builder: BigQueryQueryBuilder = BigQueryQueryBuilder(self.engine)
+        self.table_factory: BigQueryTableFactory = BigQueryTableFactory(self.data_source)
 
-        self.query_builder: BigQueryQueryBuilder = BigQueryQueryBuilder(self.client)
+    def sync_tables(self, tables=None, force=False):
+        with self.engine.begin() as connection:
+            self.table_factory.sync_tables(connection, tables, force)
 
-    def get_table(project_name: str, dataset_name: str, table_name: str) -> Table:
-        table = Table(f'{project_name}.{dataset_name}.{table_name}', metadata, autoload_with=engine)
-        return table
-
-    def sync_tables(self, dataset_id, tables=None, force=False):
-        self.table_factory.sync_tables(dataset_id, tables, force)
-
-    def get_table_preview(self, dataset_id, table, limit=100):
-        query = f"SELECT * FROM `{dataset_id}.{table}` LIMIT {limit}"
-        results = self.execute_query(query)
-        count_query = f"SELECT COUNT(*) FROM `{dataset_id}.{table}`"
-        length = self.execute_query(count_query)[0][0]
+    def get_table_preview(self, table, limit=100):
+        data = self.execute_query(f"""select * from "{table}" limit {limit}""", cached=True)
+        length = self.execute_query(f'''select count(*) from "{table}"''', cached=True)[0][0]
         return {
-            "data": results or [],
+            "data": data or [],
             "length": length or 0,
         }
 
-    def get_table_columns(self, dataset_id, table):
-        return self.table_factory.get_table_columns(dataset_id, table)
+    def get_table_columns(self, table):
+        with self.connect() as connection:
+            self.table_factory.db_conn = connection
+            return self.table_factory.get_table_columns(table)
 
-    def execute_query(self, query):
-        job = self.client.query(query)
-        return [dict(row.items()) for row in job.result()]
-
-    def get_column_options(self, dataset_id, table, column, search_text=None, limit=50):
-        query = f"SELECT DISTINCT {column} FROM `{dataset_id}.{table}` LIMIT {limit}"
+    def get_column_options(self, table, column, search_text=None, limit=50):
+        query = Select(Column(column)).select_from(Table(table)).distinct().limit(limit)
         if search_text:
-            query += f" WHERE {column} LIKE '%{search_text}%'"
-        return self.execute_query(query)
+            query = query.where(Column(column).like(f"%{search_text}%"))
+        query = self.compile_query(query)
+        return self.execute_query(query, pluck=True)

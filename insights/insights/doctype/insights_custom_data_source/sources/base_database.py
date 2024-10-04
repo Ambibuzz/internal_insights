@@ -84,12 +84,13 @@ class BaseDatabase(Database):
 
     def test_connection(self, log_errors=True):
         with self.connect(log_errors=log_errors) as connection:
-            res = connection.execute(text("SELECT 1"))
+            res = connection.execute(text("SELECT *"))
             return res.fetchone()
 
     def connect(self, *, log_errors=True):
         try:
-            return self.engine.connect()
+            connection =  self.engine.connect()
+            return connection
         except Exception as e:
             log_errors and frappe.log_error("Error connecting to database")
             self.handle_db_connection_error(e)
