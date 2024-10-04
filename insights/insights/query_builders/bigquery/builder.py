@@ -1,4 +1,3 @@
-from google.cloud import bigquery
 from ..sql_builder import ColumnFormatter, Functions, SQLQueryBuilder
 
 
@@ -40,8 +39,8 @@ class BigQueryColumnFormatter(ColumnFormatter):
 
 
 class BigQueryQueryBuilder(SQLQueryBuilder):
-    def __init__(self, client: bigquery.Client):
-        super().__init__(client)
-        self.client = client
+    def __init__(self, engine):
+        super().__init__(engine)
+        self.engine = engine
         self.functions = Functions
         self.column_formatter = BigQueryColumnFormatter
