@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import pathlib
+from typing import List, Union
 
 import chardet
 import frappe
@@ -12,7 +13,7 @@ from frappe.website.page_renderers.template_page import TemplatePage
 
 class ResultColumn:
     label: str
-    type: str | list[str]
+    type: Union[str, List[str]]
     options: dict = {}
 
     @staticmethod
@@ -30,13 +31,11 @@ class ResultColumn:
         return frappe._dict(
             label=data.get("alias") or data.get("label") or "Unnamed",
             type=data.get("type") or "String",
-            options=data.get("format_option")
-            or data.get("options")
-            or data.get("format_options"),
+            options=data.get("format_option") or data.get("options") or data.get("format_options"),
         )
 
     @classmethod
-    def from_dicts(cls, data: list[dict]) -> list["ResultColumn"]:
+    def from_dicts(cls, data: List[dict]) -> List["ResultColumn"]:
         return [cls.from_dict(d) for d in data]
 
 
@@ -108,33 +107,6 @@ class InsightsSettings:
         return frappe.db.get_single_value("Insights Settings", key)
 
 
-def deep_convert_dict_to_dict(d):
-    if isinstance(d, dict):
-        new_dict = frappe._dict()
-        for k, v in d.items():
-            new_dict[k] = deep_convert_dict_to_dict(v)
-        return new_dict
-
-    if isinstance(d, list):
-        new_list = []
-        for v in d:
-            new_list.append(deep_convert_dict_to_dict(v))
-        return new_list
-
-    return d
-
-
-def create_execution_log(sql, time_taken=0, query_name=None):
-    frappe.get_doc(
-        {
-            "doctype": "Insights Query Execution Log",
-            "time_taken": time_taken,
-            "query": query_name,
-            "sql": sql,
-        }
-    ).insert(ignore_permissions=True)
-
-
 def detect_encoding(file_path: str):
     file_path: pathlib.Path = pathlib.Path(file_path)
     with open(file_path, "rb") as file:
@@ -197,9 +169,7 @@ class InsightsPageRenderer(TemplatePage):
         return super().render()
 
     def set_headers(self):
-        allowed_origins = frappe.db.get_single_value(
-            "Insights Settings", "allowed_origins"
-        )
+        allowed_origins = frappe.db.get_single_value("Insights Settings", "allowed_origins")
         if not allowed_origins:
             return
 
@@ -207,6 +177,4 @@ class InsightsPageRenderer(TemplatePage):
         allowed_origins = allowed_origins.split(",") if allowed_origins else []
         allowed_origins = [origin.strip() for origin in allowed_origins]
         allowed_origins = " ".join(allowed_origins)
-        self.headers[
-            "Content-Security-Policy"
-        ] = f"frame-ancestors 'self' {allowed_origins}"
+        self.headers["Content-Security-Policy"] = f"frame-ancestors 'self' {allowed_origins}"

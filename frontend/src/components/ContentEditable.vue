@@ -5,7 +5,7 @@
 		:contenteditable="disabled ? false : contenteditable"
 		:placeholder="placeholder"
 		@input="update"
-		@blur="update('blur')"
+		@blur="update"
 		@paste="onPaste"
 		@keypress="onKeypress"
 		ref="element"
@@ -21,7 +21,7 @@ function replaceAll(str, search, replacement) {
 	return str.split(search).join(replacement)
 }
 
-const emit = defineEmits(['returned', 'update:modelValue', 'change', 'blur'])
+const emit = defineEmits(['returned', 'update:modelValue', 'change'])
 const props = defineProps({
 	tag: {
 		type: String,
@@ -67,7 +67,6 @@ function valuePropPresent() {
 }
 
 function update(event) {
-	if (event == 'blur') emit('blur', currentContent())
 	if (valuePropPresent()) {
 		emit('change', currentContent())
 	} else {

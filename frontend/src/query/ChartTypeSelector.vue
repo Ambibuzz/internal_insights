@@ -17,11 +17,7 @@ const chartOptions = computed(() => {
 </script>
 
 <template>
-	<Autocomplete
-		:options="chartOptions"
-		:modelValue="query.chart.doc.chart_type"
-		@update:modelValue="query.chart.doc.chart_type = $event?.value"
-	>
+	<Autocomplete :return-value="true" :options="chartOptions" v-model="query.chart.doc.chart_type">
 		<template #target="{ togglePopover }">
 			<Button variant="outline" @click="togglePopover">
 				<div class="flex items-center gap-2">

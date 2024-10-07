@@ -26,10 +26,7 @@
 							name="body"
 							v-bind="{ togglePopover, updatePosition, open, close, isOpen }"
 						>
-							<div
-								class="rounded-lg border border-gray-100 bg-white shadow-xl"
-								:class="bodyClass"
-							>
+							<div class="rounded-lg border border-gray-100 bg-white shadow-xl">
 								<slot
 									name="body-main"
 									v-bind="{
@@ -76,7 +73,6 @@ export default {
 			default: 'bottom-start',
 		},
 		popoverClass: [String, Object, Array],
-		bodyClass: [String, Object, Array],
 		transition: {
 			default: null,
 		},
@@ -113,8 +109,6 @@ export default {
 	},
 	mounted() {
 		this.listener = (e) => {
-			if (!this.isOpen) return
-
 			const clickedElement = e.target
 			const reference = this.$refs.reference
 			const popoverBody = this.$refs.popover
@@ -147,8 +141,6 @@ export default {
 		}
 		if (this.hideOnBlur) {
 			document.addEventListener('click', this.listener)
-			// https://github.com/tailwindlabs/headlessui/issues/834#issuecomment-1030907894
-			document.addEventListener('mousedown', this.listener)
 		}
 		this.$nextTick(() => {
 			this.targetWidth = this.$refs['target'].clientWidth
@@ -157,7 +149,6 @@ export default {
 	beforeDestroy() {
 		this.popper && this.popper.destroy()
 		document.removeEventListener('click', this.listener)
-		document.removeEventListener('mousedown', this.listener)
 	},
 	computed: {
 		showPropPassed() {

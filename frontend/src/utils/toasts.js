@@ -15,7 +15,7 @@ export function createToast(toastOptions) {
 		options.title = toastOptions.title
 	}
 	const component = h(Toast, { ...toastOptions, ...options })
-	toast.custom(markRaw(component))
+	toast(markRaw(component))
 }
 
 function titleCase(str) {

@@ -4,14 +4,11 @@ import { whenHasValue } from '@/utils'
 import { useStorage } from '@vueuse/core'
 import { UnwrapRef, computed, reactive } from 'vue'
 
-export type GetTableParams =
-	| {
-			name: string
-	  }
-	| {
-			table: string
-			data_source: string
-	  }
+export type GetTableParams = {
+	name: string
+	table: string
+	data_source: string
+}
 
 async function useDataSourceTable(params: GetTableParams) {
 	const name = await getTableName(params)
@@ -80,14 +77,15 @@ type TableNameCache = Record<string, string>
 const tableNameCache = useStorage<TableNameCache>(dailyCacheKey, {})
 
 async function getTableName(params: GetTableParams): Promise<string> {
-	if ('name' in params) return params.name
-	
-	const key = `${params.data_source}:${params.table}`
+	const { name, table, data_source } = params
+	if (name) return name
+
+	const key = `${data_source}:${table}`
 	if (tableNameCache.value[key]) {
 		return tableNameCache.value[key]
 	}
 
-	const _name = await fetchTableName(params.data_source, params.table)
+	const _name = await fetchTableName(data_source, table)
 	tableNameCache.value[key] = _name
 	return _name
 }

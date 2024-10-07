@@ -70,8 +70,6 @@ const tanstackColumns = computed(() => {
 			v-if="props.options?.columns?.length || props.data?.length"
 			:data="pivotedData"
 			:columns="tanstackColumns"
-			:showFooter="Boolean(props.options.showTotal)"
-			:showFilters="Boolean(props.options.filtersEnabled)"
 		/>
 	</div>
 </template>
