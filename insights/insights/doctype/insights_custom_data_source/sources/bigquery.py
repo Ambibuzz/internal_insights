@@ -9,6 +9,7 @@ from sqlalchemy.engine.base import Connection
 from sqlalchemy.dialects import registry
 from sqlalchemy import *
 from sqlalchemy.engine import create_engine
+from sqlalchemy import inspect, text
 from sqlalchemy import MetaData
 from sqlalchemy.schema import *
 from .utils import create_insights_table
@@ -106,8 +107,15 @@ class BigQueryDatabase(BaseDatabase):
 
         self.engine = create_engine(
             'bigquery://',
-            credentials_info=self.service_account
+            credentials_info=self.service_account,
         )
+        self.metadata = MetaData()
+        self.metadata.reflect(bind=self.engine)
+        all_tables = self.metadata.tables.keys()    # lists tables using the SQLAlchemy way
+
+        with self.engine.connect() as connection:
+            result = connection.execute(text("SELECT * FROM `ambika_data.atc_item_level` LIMIT 5"))
+            frappe.throw(str(result.fetchall()))
 
         self.query_builder: BigQueryQueryBuilder = BigQueryQueryBuilder(self.engine)
         self.table_factory: BigQueryTableFactory = BigQueryTableFactory(self.data_source)
