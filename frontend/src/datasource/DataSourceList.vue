@@ -87,7 +87,7 @@ const databaseTypes = ref([
 	{
 		label: 'MariaDB',
 		description: 'Connect to a MariaDB database',
-		imgSrc: '/src/assets/MariaDBIcon.png',
+		imgSrc: new URL('/src/assets/MariaDBIcon.png', import.meta.url),
 		onClick: () => {
 			new_dialog.value = false
 			showConnectMariaDBDialog.value = true
@@ -96,7 +96,7 @@ const databaseTypes = ref([
 	{
 		label: 'PostgreSQL',
 		description: 'Connect to a PostgreSQL database',
-		imgSrc: '/src/assets/PostgreSQLIcon.png',
+		imgSrc: new URL('/src/assets/PostgreSQLIcon.png', import.meta.url),
 		onClick: () => {
 			new_dialog.value = false
 			showConnectPostgreDBDialog.value = true
@@ -114,7 +114,7 @@ const databaseTypes = ref([
 	{
 		label: 'CSV',
 		description: 'Upload a CSV file',
-		imgSrc: '/src/assets/SheetIcon.png',
+		imgSrc: new URL('/src/assets/SheetIcon.png', import.meta.url),
 		onClick: () => {
 			new_dialog.value = false
 			showCSVFileUploadDialog.value = true
