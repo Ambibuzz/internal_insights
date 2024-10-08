@@ -111,11 +111,9 @@ class BigQueryDatabase(BaseDatabase):
         )
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
-        all_tables = self.metadata.tables.keys()    # lists tables using the SQLAlchemy way
 
-        with self.engine.connect() as connection:
-            result = connection.execute(text("SELECT * FROM `ambika_data.atc_item_level` LIMIT 5"))
-            frappe.throw(str(result.fetchall()))
+        # lists tables using the SQLAlchemy way
+        # all_tables = self.metadata.tables.keys()
 
         self.query_builder: BigQueryQueryBuilder = BigQueryQueryBuilder(self.engine)
         self.table_factory: BigQueryTableFactory = BigQueryTableFactory(self.data_source)
