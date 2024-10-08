@@ -84,7 +84,7 @@ class BaseDatabase(Database):
 
     def test_connection(self, log_errors=True):
         with self.connect(log_errors=log_errors) as connection:
-            res = connection.execute(text("SELECT *"))
+            res = connection.execute(text("SELECT 1"))
             return res.fetchone()
 
     def connect(self, *, log_errors=True):
