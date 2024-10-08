@@ -87,7 +87,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Database Type",
-   "options": "MariaDB\nPostgreSQL\nSQLite"
+   "options": "MariaDB\nPostgreSQL\nSQLite\nBigQuery"
   },
   {
    "default": "0",
@@ -115,7 +115,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-18 16:58:07.648715",
+ "modified": "2024-10-08 16:39:46.991230",
  "modified_by": "Administrator",
  "module": "Insights",
  "name": "Insights Data Source",
