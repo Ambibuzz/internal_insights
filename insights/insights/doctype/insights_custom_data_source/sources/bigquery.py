@@ -1,6 +1,7 @@
 # bigquery.py - Bridged file for Google BigQuery interaction
 
 import re
+import json
 import frappe
 from sqlalchemy import column as Column
 from sqlalchemy import select as Select
@@ -54,7 +55,7 @@ class BigQueryTableFactory:
 
     def get_db_tables(self, table_names=None):
         inspector = inspect(self.db_conn)
-        tables = set(inspector.get_table_names()) | set(inspector.get_foreign_table_names())
+        tables = set(inspector.get_table_names())
         if table_names:
             tables = [table for table in tables if table in table_names]
         return [self.get_table(table) for table in tables if not self.should_ignore(table)]
@@ -104,10 +105,15 @@ class BigQueryDatabase(BaseDatabase):
         self.project_id = kwargs.pop("project_id")
         self.service_account = kwargs.pop("service_account")
         registry.register('bigquery', 'pybigquery.sqlalchemy_bigquery', 'BigQueryDialect')
+        
+        # create_engine accepts service account passed as JSON with double quotes and not as dictionary
+        service_account_stringified = str(self.service_account)
+        p = re.compile('(?<!\\\\)\'')
+        service_account = p.sub('\"', service_account_stringified)
 
         self.engine = create_engine(
             'bigquery://',
-            credentials_info=self.service_account,
+            credentials_info=json.loads(service_account),
         )
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
