@@ -19,6 +19,7 @@ from .sources.base_database import BaseDatabase, DatabaseConnectionError
 from .sources.frappe_db import FrappeDB, SiteDB, is_frappe_db
 from .sources.mariadb import MariaDB
 from .sources.postgresql import PostgresDatabase
+from .sources.bigquery import BigQueryDatabase
 from .sources.query_store import QueryStore
 from .sources.sqlite import SQLiteDB
 
@@ -227,6 +228,9 @@ class InsightsDataSource(
 
         if self.database_type == "PostgreSQL":
             return PostgresDatabase(**conn_args)
+        
+        if self.database_type == "BigQuery":
+            return BigQueryDatabase(**conn_args)
 
         frappe.throw(f"Unsupported database type: {self.database_type}")
 
