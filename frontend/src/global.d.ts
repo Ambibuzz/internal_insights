@@ -66,16 +66,6 @@ type DataSourceListItem = {
 	modified_from_now: string
 }
 
-type CustomDataSourceItem = {
-	title: string
-	status: string
-	database_type: string
-	creation: string
-	modified: string
-	created_from_now: string
-	modified_from_now: string
-}
-
 type DocumentResource = {
 	doc: object
 	loading: boolean

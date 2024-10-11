@@ -1,6 +1,6 @@
 <script setup>
 import Form from '@/pages/Form.vue'
-import useCustomDataSourceStore from '@/stores/customDataSourceStore'
+import useDataSourceStore from '@/stores/dataSourceStore'
 import { computed, reactive, ref } from 'vue'
 
 const props = defineProps({ submitLabel: String })
@@ -11,22 +11,15 @@ const form = ref(null)
 const fields = [
     { name: 'title', label: 'Title', type: 'text', placeholder: 'My Database', required: true },
     {
-        label: 'Project ID',
-        name: 'project_id',
-        type: 'text',
-        placeholder: 'Project ID',
-        required: true,
-    },
-    {
         label: 'Service Account',
-        name: 'service_account',
+        name: 'connection_string',
         type: 'text',
         placeholder: '{"type": "service_account"}',
         required: true,
     },
 ]
 
-const sources = useCustomDataSourceStore()
+const sources = useDataSourceStore()
 const areRequiredFieldsFilled = computed(() => {
     return Boolean(fields.filter((field) => field.required).every((field) => database[field.name]))
 })

@@ -101,52 +101,18 @@ def get_new_datasource(db):
         )
     return data_source
 
-def get_new_custom_datasource(db):
-    data_source = frappe.new_doc("Insights Custom Data Source")
-    if db.get("type") == "BigQuery" or db.get("type") == "RedShift" or db.get("type") == "S3":
-        try:
-            service_account = json.loads(db.get("service_account"))
-        except json.JSONDecodeError as e:
-            frappe.throw(
-                title='Error',
-                msg='Service account is not a valid JSON',
-                exc=FileNotFoundError
-            )
-        data_source.update(
-            {
-                "database_type": db.get("type"),
-                "title": db.get("title"),
-                "project_id": db.get("project_id"),
-                "service_account": service_account
-            }
-        )
-    return data_source
-
-@insights_whitelist()
+@frappe.whitelist()
 def test_database_connection(database):
     data_source = get_new_datasource(database)
     return data_source.test_connection(raise_exception=True)
 
 @frappe.whitelist()
-def test_custom_database_connection(database):
-    data_source = get_new_custom_datasource(database)
-    return data_source.test_connection(raise_exception=True)
-
-@insights_whitelist()
 def add_database(database):
     data_source = get_new_datasource(database)
     data_source.save()
     data_source.enqueue_sync_tables()
 
 @frappe.whitelist()
-def add_custom_database(database):
-    track("add_custom_data_source")
-    data_source = get_new_custom_datasource(database)
-    data_source.save()
-    data_source.enqueue_sync_tables()
-
-
-@insights_whitelist()
 def complete_setup():
     settings = frappe.get_single("Insights Settings")
     settings.setup_complete = 1
