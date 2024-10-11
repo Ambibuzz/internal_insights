@@ -102,18 +102,13 @@ class BigQueryTableFactory:
 class BigQueryDatabase(BaseDatabase):
     def __init__(self, **kwargs):
         self.data_source = "BigQuery"
-        self.project_id = kwargs.pop("database_name")
-        self.service_account = kwargs.pop("connection_string")
+        self.service_account = json.loads(kwargs.pop("connection_string"))
+        self.project_id = self.service_account['project_id']
         registry.register('bigquery', 'pybigquery.sqlalchemy_bigquery', 'BigQueryDialect')
-        
-        # create_engine accepts service account passed as JSON with double quotes and not as dictionary
-        service_account_stringified = str(self.service_account)
-        p = re.compile('(?<!\\\\)\'')
-        service_account = p.sub('\"', service_account_stringified)
 
         self.engine = create_engine(
             'bigquery://',
-            credentials_info=json.loads(service_account),
+            credentials_info=self.service_account,
         )
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
@@ -139,7 +134,7 @@ class BigQueryDatabase(BaseDatabase):
             return self.table_factory.get_table_columns(table)
 
     def get_column_options(self, table, column, search_text=None, limit=50):
-        query = Select(Column(column)).select_from(Table(table)).distinct().limit(limit)
+        query = Select(Column(column)).select_from(Table(table, self.metadata)).distinct().limit(limit)
         if search_text:
             query = query.where(Column(column).like(f"%{search_text}%"))
         query = self.compile_query(query)
