@@ -11,8 +11,8 @@ const form = ref(null)
 const fields = [
     { name: 'title', label: 'Title', type: 'text', placeholder: 'My Database', required: true },
     {
-        label: 'Service Account',
         name: 'connection_string',
+        label: 'Service Account',
         type: 'text',
         placeholder: '{"type": "service_account"}',
         required: true,
