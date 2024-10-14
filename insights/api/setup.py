@@ -101,21 +101,18 @@ def get_new_datasource(db):
         )
     return data_source
 
-
-@insights_whitelist()
+@frappe.whitelist()
 def test_database_connection(database):
     data_source = get_new_datasource(database)
     return data_source.test_connection(raise_exception=True)
 
-
-@insights_whitelist()
+@frappe.whitelist()
 def add_database(database):
     data_source = get_new_datasource(database)
     data_source.save()
     data_source.enqueue_sync_tables()
 
-
-@insights_whitelist()
+@frappe.whitelist()
 def complete_setup():
     settings = frappe.get_single("Insights Settings")
     settings.setup_complete = 1
