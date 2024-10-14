@@ -37,7 +37,7 @@ const session = sessionStore()
 const $socket = inject('$socket')
 const progressLabel = ref('Continue')
 $socket.on('insights_demo_setup_progress', (data) => {
-	if (data.user == session.user.email) {
+	if (data.user == session.user.user_id) {
 		progressLabel.value = `${data.progress.toFixed(0)}% complete...`
 		if (data.progress == 100) {
 			progressLabel.value = 'Continue'

@@ -1,15 +1,10 @@
 import frappe
-from frappe.utils.caching import redis_cache, site_cache
+from frappe.utils.caching import redis_cache
 
 from insights import notify
-from insights.decorators import insights_whitelist, validate_type
-from insights.insights.doctype.insights_data_source_v3.ibis_utils import (
-    to_insights_type,
-)
+from insights.api.telemetry import track
+from insights.decorators import check_role
 from insights.insights.doctype.insights_query.utils import infer_type_from_list
-from insights.insights.doctype.insights_table_link_v3.insights_table_link_v3 import (
-    InsightsTableLinkv3,
-)
 from insights.insights.doctype.insights_team.insights_team import (
     check_data_source_permission,
     check_table_permission,
@@ -18,7 +13,8 @@ from insights.insights.doctype.insights_team.insights_team import (
 from insights.utils import InsightsTable, detect_encoding
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def get_data_sources():
     return frappe.get_list(
         "Insights Data Source",
@@ -38,7 +34,8 @@ def get_data_sources():
     )
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def get_table_columns(data_source, table):
     check_table_permission(data_source, table)
 
@@ -53,15 +50,15 @@ def get_table_columns(data_source, table):
     return {"columns": doc.columns}
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def get_table_name(data_source, table):
     check_table_permission(data_source, table)
-    return frappe.get_value(
-        "Insights Table", {"data_source": data_source, "table": table}, "name"
-    )
+    return frappe.get_value("Insights Table", {"data_source": data_source, "table": table}, "name")
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def get_tables(data_source=None, with_query_tables=False):
     if not data_source:
         return []
@@ -83,10 +80,9 @@ def get_tables(data_source=None, with_query_tables=False):
     )
 
 
-@insights_whitelist()
-def create_table_link(
-    data_source, primary_table, foreign_table, primary_key, foreign_key
-):
+@frappe.whitelist()
+@check_role("Insights User")
+def create_table_link(data_source, primary_table, foreign_table, primary_key, foreign_key):
     check_table_permission(data_source, primary_table.get("value"))
     check_table_permission(data_source, foreign_table.get("value"))
 
@@ -125,7 +121,8 @@ def create_table_link(
         foreign.save()
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def get_columns_from_uploaded_file(filename):
     import pandas as pd
 
@@ -155,7 +152,8 @@ def create_data_source_for_csv():
         data_source.insert(ignore_permissions=True)
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def import_csv(table_label, table_name, filename, if_exists, columns, data_source):
     create_data_source_for_csv()
 
@@ -186,8 +184,10 @@ def import_csv(table_label, table_name, filename, if_exists, columns, data_sourc
     )
 
 
-@insights_whitelist()
+@frappe.whitelist()
+@check_role("Insights User")
 def delete_data_source(data_source):
+    track("delete_data_source")
     try:
         frappe.delete_doc("Insights Data Source", data_source)
         notify(
@@ -215,7 +215,7 @@ def delete_data_source(data_source):
         )
 
 
-@insights_whitelist()
+@frappe.whitelist()
 @redis_cache()
 def fetch_column_values(data_source, table, column, search_text=None):
     if not data_source or not isinstance(data_source, str):
@@ -228,17 +228,13 @@ def fetch_column_values(data_source, table, column, search_text=None):
     return doc.get_column_options(table, column, search_text)
 
 
-@insights_whitelist()
+@frappe.whitelist()
 def get_relation(data_source, table_one, table_two):
-    table_one_doc = InsightsTable.get_doc(
-        {"data_source": data_source, "table": table_one}
-    )
+    table_one_doc = InsightsTable.get_doc({"data_source": data_source, "table": table_one})
     if not table_one_doc:
         frappe.throw(f"Table {table_one} not found")
 
-    table_two_doc = InsightsTable.get_doc(
-        {"data_source": data_source, "table": table_two}
-    )
+    table_two_doc = InsightsTable.get_doc({"data_source": data_source, "table": table_two})
     if not table_two_doc:
         frappe.throw(f"Table {table_two} not found")
 
@@ -272,112 +268,3 @@ def get_reverse_cardinality(cardinality):
     if cardinality == "N:1":
         return "1:N"
     return cardinality
-
-
-# v3 APIs
-
-
-@insights_whitelist()
-def get_all_data_sources():
-    return frappe.get_all(
-        "Insights Data Source v3",
-        filters={"status": "Active"},
-        fields=[
-            "name",
-            "status",
-            "title",
-            "owner",
-            "creation",
-            "modified",
-            "database_type",
-        ],
-    )
-
-
-@insights_whitelist()
-@validate_type
-def get_data_source_tables(data_source=None, search_term=None, limit=100):
-    tables = frappe.get_all(
-        "Insights Table v3",
-        filters={
-            "data_source": data_source or ["is", "set"],
-        },
-        or_filters={
-            "label": ["is", "set"] if not search_term else ["like", f"%{search_term}%"],
-            "table": ["is", "set"] if not search_term else ["like", f"%{search_term}%"],
-        },
-        fields=["name", "table", "label", "data_source", "last_synced_on"],
-        limit=limit,
-    )
-
-    ret = []
-    for table in tables:
-        ret.append(
-            frappe._dict(
-                {
-                    "label": table.label,
-                    "table_name": table.table,
-                    "data_source": table.data_source,
-                    "last_synced_on": table.last_synced_on,
-                }
-            )
-        )
-    return ret
-
-
-@insights_whitelist()
-@site_cache
-@validate_type
-def get_data_source_table_columns(data_source: str, table_name: str):
-    ds = frappe.get_doc("Insights Data Source v3", data_source)
-    db = ds._get_ibis_backend()
-    table = db.table(table_name)
-    return [
-        frappe._dict(
-            column=column,
-            label=column,
-            type=to_insights_type(datatype),
-        )
-        for column, datatype in table.schema().items()
-    ]
-
-
-@insights_whitelist()
-@validate_type
-def update_data_source_tables(data_source: str):
-    ds = frappe.get_doc("Insights Data Source v3", data_source)
-    ds.update_table_list()
-
-
-@insights_whitelist()
-@validate_type
-def get_table_links(data_source: str, left_table: str, right_table: str):
-    return InsightsTableLinkv3.get_links(data_source, left_table, right_table)
-
-
-def make_data_source(data_source):
-    data_source = frappe._dict(data_source)
-    ds = frappe.new_doc("Insights Data Source v3")
-    ds.database_type = data_source.database_type
-    ds.title = data_source.title
-    ds.host = data_source.host
-    ds.port = data_source.port
-    ds.username = data_source.username
-    ds.password = data_source.password
-    ds.database_name = data_source.database_name
-    ds.use_ssl = data_source.use_ssl
-    ds.connection_string = data_source.connection_string
-    return ds
-
-
-@insights_whitelist()
-def test_connection(data_source):
-    ds = make_data_source(data_source)
-    return ds.test_connection(raise_exception=True)
-
-
-@insights_whitelist()
-def create_data_source(data_source):
-    ds = make_data_source(data_source)
-    ds.save()
-    return ds.name

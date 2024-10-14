@@ -17,12 +17,12 @@ import { computed, unref, watch } from 'vue'
 
 export const COLUMN_TYPES = [
 	{ label: 'String', value: 'String' },
-	{ label: 'Text', value: 'Text' },
 	{ label: 'Integer', value: 'Integer' },
 	{ label: 'Decimal', value: 'Decimal' },
+	{ label: 'Text', value: 'Text' },
+	{ label: 'Datetime', value: 'Datetime' },
 	{ label: 'Date', value: 'Date' },
 	{ label: 'Time', value: 'Time' },
-	{ label: 'Datetime', value: 'Datetime' },
 ]
 
 export const fieldtypesToIcon = {
@@ -45,18 +45,10 @@ export const returnTypesToIcon = {
 	any: ShieldQuestion,
 }
 
-const NumberTypes = ['Integer', 'Decimal']
-const TextTypes = ['Text', 'String']
-const DateTypes = ['Date', 'Datetime', 'Time']
-
 export const FIELDTYPES = {
-	NUMBER: NumberTypes,
-	TEXT: TextTypes,
-	DATE: DateTypes,
-	MEASURE: NumberTypes,
-	DIMENSION: TextTypes.concat(DateTypes),
-	DISCRETE: TextTypes,
-	CONTINUOUS: NumberTypes.concat(DateTypes),
+	NUMBER: ['Integer', 'Decimal'],
+	TEXT: ['Text', 'String'],
+	DATE: ['Date', 'Datetime', 'Time'],
 }
 
 export const AGGREGATIONS = [
@@ -196,10 +188,6 @@ export function safeJSONParse(str, defaultValue = null) {
 		console.log(str)
 		console.error(e)
 		console.groupEnd()
-		createToast({
-			message: 'Error parsing JSON',
-			variant: 'error',
-		})
 		return defaultValue
 	}
 }
@@ -286,7 +274,6 @@ export function getShortNumber(number, precision = 0) {
 }
 
 export function formatNumber(number, precision = 2) {
-	if (isNaN(number)) return number
 	precision = precision || guessPrecision(number)
 	const session = sessionStore()
 	const locale = session.user?.country == 'India' ? 'en-IN' : session.user?.locale
@@ -478,10 +465,11 @@ export function wheneverChanges(getter, callback, options = {}) {
 	let prevValue = null
 	function onChange(value) {
 		if (areDeeplyEqual(value, prevValue)) return
+		if (!value) return
 		prevValue = value
 		callback(value)
 	}
-	return watchDebounced(getter, onChange, options)
+	return watch(getter, onChange, options)
 }
 
 export async function run_doc_method(method, doc, args = {}) {

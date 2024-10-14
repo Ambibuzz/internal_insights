@@ -159,7 +159,7 @@ const routes = [
 ]
 
 let router = createRouter({
-	history: createWebHistory('/insights_v2'),
+	history: createWebHistory('/insights'),
 	routes,
 })
 

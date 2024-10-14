@@ -40,11 +40,7 @@ if (!options.value.targetType) {
 		/>
 		<div>
 			<label class="mb-1.5 block text-xs text-gray-600">Progress Column</label>
-			<Autocomplete
-				:options="valueOptions"
-				:modelValue="options.progress"
-				@update:modelValue="options.progress = $event?.value"
-			/>
+			<Autocomplete v-model="options.progress" :returnValue="true" :options="valueOptions" />
 		</div>
 		<div>
 			<label class="mb-1.5 block text-xs text-gray-600">Target</label>
@@ -60,10 +56,10 @@ if (!options.value.targetType) {
 					<div class="w-full">
 						<Autocomplete
 							v-if="options.targetType === 'Column'"
+							v-model="options.target"
+							:returnValue="true"
 							placeholder="Select a column..."
 							:options="valueOptions"
-							:modelValue="options.target"
-							@update:modelValue="options.target = $event?.value"
 						/>
 						<FormControl
 							v-if="options.targetType === 'Value'"

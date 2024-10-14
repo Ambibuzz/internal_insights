@@ -18,38 +18,30 @@
 				</template>
 			</FormControl>
 		</div>
-		<ListView
-			:columns="dataSourceListColumns"
-			:rows="filteredSourceList"
-			:row-key="'name'"
-			:options="{
-				showTooltip: false,
-				getRowRoute: (dataSource) => ({
-					name: 'DataSource',
-					params: { name: dataSource.name },
-				}),
-				emptyState: {
-					title: 'No Data Sources.',
-					description: 'No data sources to display.',
-					button: {
-						label: 'New Data Source',
-						variant: 'solid',
-						onClick: () => (new_dialog = true),
-					},
+		<ListView :columns="dataSourceListColumns" :rows="filteredSourceList" :row-key="'name'" :options="{
+			showTooltip: false,
+			getRowRoute: (dataSource) => ({
+				name: 'DataSource',
+				params: { name: dataSource.name },
+			}),
+			emptyState: {
+				title: 'No Data Sources.',
+				description: 'No data sources to display.',
+				button: {
+					label: 'New Data Source',
+					variant: 'solid',
+					onClick: () => (new_dialog = true),
 				},
-			}"
-		>
+			},
+		}">
 		</ListView>
 	</div>
 
-	<NewDialogWithTypes
-		v-model:show="new_dialog"
-		title="Select Source Type"
-		:types="databaseTypes"
-	/>
+	<NewDialogWithTypes v-model:show="new_dialog" title="Select Source Type" :types="databaseTypes" />
 
 	<ConnectMariaDBDialog v-model:show="showConnectMariaDBDialog" />
 	<ConnectPostgreDBDialog v-model:show="showConnectPostgreDBDialog" />
+	<ConnectBigQueryDialog v-model:show="showConnectBigQueryDialog" />
 	<UploadCSVFileDialog v-model:show="showCSVFileUploadDialog" />
 </template>
 
@@ -59,6 +51,7 @@ import NewDialogWithTypes from '@/components/NewDialogWithTypes.vue'
 import PageBreadcrumbs from '@/components/PageBreadcrumbs.vue'
 import ConnectMariaDBDialog from '@/datasource/ConnectMariaDBDialog.vue'
 import ConnectPostgreDBDialog from '@/datasource/ConnectPostgreDBDialog.vue'
+import ConnectBigQueryDialog from '@/datasource/ConnectBigQueryDialog.vue'
 import UploadCSVFileDialog from '@/datasource/UploadCSVFileDialog.vue'
 import useDataSourceStore from '@/stores/dataSourceStore'
 import { updateDocumentTitle } from '@/utils'
@@ -88,12 +81,13 @@ const filteredSourceList = computed(() => {
 const router = useRouter()
 const showConnectMariaDBDialog = ref(false)
 const showConnectPostgreDBDialog = ref(false)
+const showConnectBigQueryDialog = ref(false)
 const showCSVFileUploadDialog = ref(false)
 const databaseTypes = ref([
 	{
 		label: 'MariaDB',
 		description: 'Connect to a MariaDB database',
-		imgSrc: new URL('/src/assets/MariaDBIcon.png', import.meta.url),
+		imgSrc: '/src/assets/MariaDBIcon.png',
 		onClick: () => {
 			new_dialog.value = false
 			showConnectMariaDBDialog.value = true
@@ -102,16 +96,25 @@ const databaseTypes = ref([
 	{
 		label: 'PostgreSQL',
 		description: 'Connect to a PostgreSQL database',
-		imgSrc: new URL('/src/assets/PostgreSQLIcon.png', import.meta.url),
+		imgSrc: '/src/assets/PostgreSQLIcon.png',
 		onClick: () => {
 			new_dialog.value = false
 			showConnectPostgreDBDialog.value = true
 		},
 	},
 	{
+		label: 'BigQuery',
+		description: 'Connect to a BigQuery database',
+		imgSrc: '/src/assets/BigQueryIcon.png',
+		onClick: () => {
+			new_dialog.value = false
+			showConnectBigQueryDialog.value = true
+		},
+	},
+	{
 		label: 'CSV',
 		description: 'Upload a CSV file',
-		imgSrc: new URL('/src/assets/SheetIcon.png', import.meta.url),
+		imgSrc: '/src/assets/SheetIcon.png',
 		onClick: () => {
 			new_dialog.value = false
 			showCSVFileUploadDialog.value = true

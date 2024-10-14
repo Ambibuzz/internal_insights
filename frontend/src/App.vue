@@ -23,7 +23,7 @@ if (!isGuestView.value) {
 	const $notify = inject('$notify')
 	const session = sessionStore()
 	$socket.on('insights_notification', (data) => {
-		if (data.user == session.user.email) {
+		if (data.user == session.user.user_id) {
 			$notify({
 				title: data.title || data.message,
 				message: data.title ? data.message : '',

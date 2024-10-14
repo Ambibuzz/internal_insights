@@ -35,11 +35,7 @@ const columnOptions = computed(() => {
 		/>
 		<div>
 			<span class="mb-2 block text-sm leading-4 text-gray-700">Number Column</span>
-			<Autocomplete
-				:options="columnOptions"
-				:modelValue="options.column"
-				@update:modelValue="options.column = $event?.value"
-			/>
+			<Autocomplete v-model="options.column" :returnValue="true" :options="columnOptions" />
 		</div>
 		<div>
 			<span class="mb-2 block text-sm leading-4 text-gray-700">Prefix</span>

@@ -5,6 +5,7 @@ from datetime import datetime
 import frappe
 import telegram
 from croniter import croniter
+from frappe.integrations.utils import make_post_request
 from frappe.model.document import Document
 from frappe.utils import validate_email_address
 from frappe.utils.data import get_datetime, get_datetime_str, now_datetime
@@ -46,22 +47,20 @@ class InsightsAlert(Document):
 
     def evaluate_condition(self, for_validate=False):
         query = frappe.get_doc("Insights Query", self.query)
-        results = query.retrieve_results(fetch_if_not_cached=not for_validate)
+        results = query.fetch_results() if not for_validate else query.retrieve_results()
 
-        if (hasattr(results, "empty") and results.empty) or not results:
+        if not results:
             return False
 
         column_names = [d.get("label") for d in results[0]]
         results = DataFrame(results[1:], columns=column_names)
 
-        return frappe.safe_eval(
-            self.condition, eval_locals=frappe._dict(results=results, any=any)
-        )
+        return frappe.safe_eval(self.condition, eval_locals=frappe._dict(results=results, any=any))
 
     def evaluate_message(self):
         query = frappe.get_doc("Insights Query", self.query)
         query_dict = query.as_dict()
-        query_dict.results = query.retrieve_results(fetch_if_not_cached=True)
+        # query_dict.results = f"""<div class="results">{query.get_formatted_results(as_html=True)}</div>"""
         message = frappe.render_template(self.message, context=query_dict)
         if self.channel == "Telegram":
             return message
@@ -113,9 +112,7 @@ def send_alerts():
 
 class Telegram:
     def __init__(self, chat_id: str = None):
-        self.token = frappe.get_single("Insights Settings").get_password(
-            "telegram_api_token"
-        )
+        self.token = frappe.get_single("Insights Settings").get_password("telegram_api_token")
         if not self.token:
             frappe.throw("Telegram Bot Token not set in Insights Settings")
 
@@ -124,7 +121,9 @@ class Telegram:
 
     def send(self, message):
         try:
-            return self.bot.send_message(chat_id=self.chat_id, text=message[:4096])
+            text = message[: telegram.MAX_MESSAGE_LENGTH]
+            parse_mode = telegram.ParseMode.MARKDOWN
+            return self.bot.send_message(chat_id=self.chat_id, text=text, parse_mode=parse_mode)
         except Exception:
             frappe.log_error("Telegram Bot Error")
             raise

@@ -5,36 +5,35 @@ import json
 
 import frappe
 
-from insights.decorators import insights_whitelist
-from insights.setup.demo import DemoDataFactory
+from insights.api.telemetry import track
+from insights.setup.demo import setup as import_demo_data
 
 
-@insights_whitelist()
+@frappe.whitelist()
 def setup_complete():
     return bool(frappe.get_single("Insights Settings").setup_complete)
 
 
-@insights_whitelist()
+@frappe.whitelist()
 def update_erpnext_source_title(title):
+    track("setup_erpnext_source")
     frappe.db.set_value("Insights Data Source", "Site DB", "title", title)
 
 
-@insights_whitelist()
+@frappe.whitelist()
 def setup_sample_data(dataset):
-    factory = DemoDataFactory()
-    factory.run()
-    # import_demo_queries_and_dashboards()
+    track("setup_sample_data")
+    import_demo_data()
+    import_demo_queries_and_dashboards()
 
 
 def import_demo_queries_and_dashboards():
-    demo_dashboard_exists = frappe.db.exists(
-        "Insights Dashboard", {"title": "eCommerce"}
-    )
+    demo_dashboard_exists = frappe.db.exists("Insights Dashboard", {"title": "eCommerce"})
     if demo_dashboard_exists:
         return
     try:
         setup_fixture_path = frappe.get_app_path("insights", "setup")
-        with open(setup_fixture_path + "/demo_queries.json") as f:
+        with open(setup_fixture_path + "/demo_queries.json", "r") as f:
             queries = json.load(f)
 
         for query in queries:
@@ -42,7 +41,7 @@ def import_demo_queries_and_dashboards():
             query_doc.update(query)
             query_doc.save(ignore_permissions=True)
 
-        with open(setup_fixture_path + "/demo_dashboards.json") as f:
+        with open(setup_fixture_path + "/demo_dashboards.json", "r") as f:
             dashboards = json.load(f)
 
         for dashboard in dashboards:
@@ -54,8 +53,9 @@ def import_demo_queries_and_dashboards():
         print(e)
 
 
-@insights_whitelist()
+@frappe.whitelist()
 def submit_survey_responses(responses):
+    track("submit_survey_responses")
     responses = frappe.parse_json(responses)
 
     try:
@@ -101,22 +101,21 @@ def get_new_datasource(db):
         )
     return data_source
 
-
-@insights_whitelist()
+@frappe.whitelist()
 def test_database_connection(database):
     data_source = get_new_datasource(database)
     return data_source.test_connection(raise_exception=True)
 
-
-@insights_whitelist()
+@frappe.whitelist()
 def add_database(database):
+    track("add_data_source")
     data_source = get_new_datasource(database)
     data_source.save()
     data_source.enqueue_sync_tables()
 
-
-@insights_whitelist()
+@frappe.whitelist()
 def complete_setup():
     settings = frappe.get_single("Insights Settings")
     settings.setup_complete = 1
     settings.save()
+    track("setup_complete")

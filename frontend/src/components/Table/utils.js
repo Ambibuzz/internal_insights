@@ -54,8 +54,6 @@ export function getFormattedCell(cell) {
 
 export function getCellComponent(cell, column) {
 	const value = cell.getValue()
-	column.column_options = column.column_options || {}
-	const columnType = column.column_options.column_type || column.type
 
 	const parsedPills = parsePills(value)
 	if (parsedPills) {
@@ -65,14 +63,14 @@ export function getCellComponent(cell, column) {
 		)
 	}
 
-	if (columnType == 'Link') {
+	if (column.column_options.column_type == 'Link') {
 		return h(TableLinkCell, {
 			label: value,
 			url: column.column_options.link_url.replace('{{value}}', value),
 		})
 	}
 
-	if (columnType == 'Number') {
+	if (column.column_options.column_type == 'Number') {
 		const allValues = cell.table
 			.getCoreRowModel()
 			.rows.map((r) => r.getValue(column.column || column.label))

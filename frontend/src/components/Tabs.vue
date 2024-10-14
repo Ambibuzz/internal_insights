@@ -1,13 +1,12 @@
 <template>
-	<div class="flex h-7 w-full cursor-pointer select-none items-center rounded border bg-gray-100">
+	<div
+		class="flex h-7.5 w-full cursor-pointer select-none items-center rounded bg-gray-100 p-0.5"
+	>
 		<div
 			v-for="tab in tabs"
 			class="flex h-full flex-1 items-center justify-center truncate px-4 transition-all"
 			:class="{
-				'rounded bg-white shadow':
-					tab.active ||
-					currentTab === tab.value ||
-					(currentTab === undefined && tab.default),
+				'rounded bg-white shadow': tab.active || modelValue === tab.value,
 				'cursor-not-allowed': tab.disabled,
 			}"
 			@click="handleClick(tab)"
@@ -20,9 +19,11 @@
 <script setup>
 import { computed } from 'vue'
 
-const currentTab = defineModel()
-const emit = defineEmits(['switch'])
-const props = defineProps({ tabs: { type: Array, required: true } })
+const emit = defineEmits(['switch', 'update:modelValue'])
+const props = defineProps({
+	modelValue: { required: false },
+	tabs: { type: Array, required: true },
+})
 
 const tabs = computed(() => {
 	if (typeof props.tabs?.[0] == 'string') {
@@ -32,7 +33,7 @@ const tabs = computed(() => {
 })
 function handleClick(tab) {
 	if (tab.disabled) return
-	currentTab.value = tab.value
 	emit('switch', tab)
+	emit('update:modelValue', tab.value)
 }
 </script>

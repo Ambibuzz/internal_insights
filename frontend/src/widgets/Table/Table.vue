@@ -36,9 +36,9 @@ const tanstackColumns = computed(() => {
 	if (columns.value.some((c) => !c.column)) return []
 
 	const indexColumn = {
-		id: '__index',
+		id: 'index',
 		header: '#',
-		accessorKey: '__index',
+		accessorKey: 'index',
 		enableColumnFilter: false,
 		cell: (props) => props.row.index + 1,
 		footer: 'Total',

@@ -23,7 +23,7 @@ import { MySQL, sql } from '@codemirror/lang-sql'
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirror/language'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
-import { onMounted, ref, watch } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { Codemirror } from 'vue-codemirror'
 
 const props = defineProps({
@@ -56,30 +56,12 @@ const props = defineProps({
 		type: Object,
 		default: () => ({}),
 	},
-	hideLineNumbers: {
-		type: Boolean,
-		default: false,
-	},
-	disableAutocompletions: {
-		type: Boolean,
-		default: false,
-	},
 })
 const emit = defineEmits(['inputChange', 'viewUpdate', 'focus', 'blur'])
-
-onMounted(() => {
-	if (props.hideLineNumbers) {
-		document.querySelectorAll('.cm-gutters').forEach((gutter) => {
-			gutter.style.display = 'none'
-		})
-	}
-})
 
 const onUpdate = (viewUpdate) => {
 	emit('viewUpdate', {
 		cursorPos: viewUpdate.state.selection.ranges[0].to,
-		syntaxTree: syntaxTree(viewUpdate.state),
-		state: viewUpdate.state,
 	})
 }
 

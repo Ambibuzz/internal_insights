@@ -1,7 +1,7 @@
 <script setup>
-import ColorPalette from '@/components/Controls/ColorPalette.vue'
 import { FIELDTYPES } from '@/utils'
 import { computed } from 'vue'
+import ColorPalette from '@/components/Controls/ColorPalette.vue'
 
 const emit = defineEmits(['update:modelValue'])
 const props = defineProps({
@@ -45,19 +45,11 @@ const valueOptions = computed(() => {
 		/>
 		<div>
 			<label class="mb-1.5 block text-xs text-gray-600">X Axis</label>
-			<Autocomplete
-				:options="indexOptions"
-				:modelValue="options.xAxis"
-				@update:modelValue="options.xAxis = $event?.value"
-			/>
+			<Autocomplete v-model="options.xAxis" :returnValue="true" :options="indexOptions" />
 		</div>
 		<div>
 			<label class="mb-1.5 block text-xs text-gray-600">Y Axis</label>
-			<Autocomplete
-				:options="valueOptions"
-				:modelValue="options.yAxis"
-				@update:modelValue="options.yAxis = $event?.value"
-			/>
+			<Autocomplete v-model="options.yAxis" :returnValue="true" :options="valueOptions" />
 		</div>
 
 		<ColorPalette v-model="options.colors" />

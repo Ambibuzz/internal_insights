@@ -11,9 +11,9 @@ const data = computed(() => convertResultToObjects(query.results.formattedResult
 const tanstackColumns = computed(() => {
 	if (!query.results.columns?.length) return []
 	const indexColumn = {
-		id: '__index',
+		id: 'index',
 		header: '#',
-		accessorKey: '__index',
+		accessorKey: 'index',
 		cell: (props) => props.row.index + 1,
 	}
 	const cols = query.results.columns.map((column) => {
